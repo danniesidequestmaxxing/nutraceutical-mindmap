@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Malaysia Nutraceutical Supply Chain — 155 Companies</title>
+<meta name="description" content="Interactive supply chain mind map of 155 Malaysian nutraceutical companies across 6 stages.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#ffffff;--bg2:#f7f7f5;--tx:#1a1a1a;--tx2:#6b7280;--tx3:#9ca3af;--bd:#e5e5e3;--bd2:#d1d5db;--info:#2563eb}
+@media(prefers-color-scheme:dark){:root{--bg:#1a1a1a;--bg2:#252525;--tx:#e5e5e3;--tx2:#9ca3af;--tx3:#6b7280;--bd:#333;--bd2:#444;--info:#60a5fa}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;color:var(--tx);background:var(--bg);max-width:720px;margin:0 auto;padding:24px 16px}
+.hd{text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--bd)}
+.hd h1{font-family:'Fraunces',Georgia,serif;font-size:22px;font-weight:600;margin-bottom:4px}
+.hd p{font-size:12px;color:var(--tx2)}
+.stg{margin-bottom:3px}
+.sh{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;user-select:none;border-radius:8px;transition:background .12s}
+.sh:hover{background:var(--bg2)}
+.sn{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+.sl{font-size:14px;font-weight:500;flex:1}
+.st{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px}
+.badge{font-size:11px;font-weight:500;padding:2px 8px;border-radius:10px;flex-shrink:0}
+.chv{width:16px;height:16px;transition:transform .2s;flex-shrink:0;opacity:.35}
+.chv.o{transform:rotate(90deg)}
+.sb{overflow:hidden;max-height:0;transition:max-height .4s ease;margin-left:14px;border-left:1.5px solid var(--bd);padding-left:16px}
+.sb.o{max-height:30000px}
+.grp{margin:8px 0 10px}
+.gl{font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:5px;padding-left:2px}
+.co{border-radius:6px;margin-bottom:2px}
+.ch{display:flex;align-items:center;gap:7px;padding:6px 10px;cursor:pointer;user-select:none;border-radius:6px;transition:background .1s}
+.ch:hover{background:var(--bg2)}
+.cd{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.cn{font-size:12px;font-weight:500;flex:1}
+.cx{width:14px;height:14px;opacity:.3;transition:transform .2s;flex-shrink:0}
+.cx.o{transform:rotate(90deg);opacity:.5}
+.det{overflow:hidden;max-height:0;transition:max-height .25s ease;padding:0 10px}
+.det.o{max-height:400px;padding:2px 10px 8px}
+.dd{font-size:12px;color:var(--tx2);line-height:1.6;margin-bottom:5px}
+.tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px}
+.tag{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:500}
+.lnk{font-size:11px;color:var(--info);text-decoration:none;display:inline-block;margin-bottom:3px}
+.lnk:hover{text-decoration:underline}
+.sec{font-size:11px;color:var(--tx3);font-style:italic}
+.conn{width:1.5px;height:10px;margin:0 0 0 24px;background:var(--bd);position:relative}
+.conn::after{content:'';position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--bd)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:20px;padding-top:12px;border-top:1px solid var(--bd)}
+.li{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx2)}
+.ld{width:8px;height:8px;border-radius:50%}
+.ft{text-align:center;margin-top:24px;padding-top:12px;border-top:1px solid var(--bd);font-size:11px;color:var(--tx3)}
+.s1 .sn,.s1 .badge{background:#E1F5EE;color:#0F6E56}.s1 .cd{background:#1D9E75}.s1 .tag{background:#E1F5EE;color:#085041}
+.s2 .sn,.s2 .badge{background:#EEEDFE;color:#534AB7}.s2 .cd{background:#7F77DD}.s2 .tag{background:#EEEDFE;color:#3C3489}
+.s3 .sn,.s3 .badge{background:#E6F1FB;color:#185FA5}.s3 .cd{background:#378ADD}.s3 .tag{background:#E6F1FB;color:#0C447C}
+.s4 .sn,.s4 .badge{background:#FAEEDA;color:#854F0B}.s4 .cd{background:#BA7517}.s4 .tag{background:#FAEEDA;color:#633806}
+.s5 .sn,.s5 .badge{background:#FAECE7;color:#993C1D}.s5 .cd{background:#D85A30}.s5 .tag{background:#FAECE7;color:#712B13}
+.s6 .sn,.s6 .badge{background:#FBEAF0;color:#993556}.s6 .cd{background:#D4537E}.s6 .tag{background:#FBEAF0;color:#72243E}
+@media(prefers-color-scheme:dark){
+.s1 .sn,.s1 .badge{background:#04342C;color:#5DCAA5}.s1 .cd{background:#5DCAA5}.s1 .tag{background:#04342C;color:#9FE1CB}
+.s2 .sn,.s2 .badge{background:#26215C;color:#AFA9EC}.s2 .cd{background:#AFA9EC}.s2 .tag{background:#26215C;color:#CECBF6}
+.s3 .sn,.s3 .badge{background:#042C53;color:#85B7EB}.s3 .cd{background:#85B7EB}.s3 .tag{background:#042C53;color:#B5D4F4}
+.s4 .sn,.s4 .badge{background:#412402;color:#EF9F27}.s4 .cd{background:#EF9F27}.s4 .tag{background:#412402;color:#FAC775}
+.s5 .sn,.s5 .badge{background:#4A1B0C;color:#F0997B}.s5 .cd{background:#F0997B}.s5 .tag{background:#4A1B0C;color:#F5C4B3}
+.s6 .sn,.s6 .badge{background:#4B1528;color:#ED93B1}.s6 .cd{background:#ED93B1}.s6 .tag{background:#4B1528;color:#F4C0D1}
+}
+</style>
+</head>
+<body>
+<div class="hd">
+<h1>Malaysia Nutraceutical Supply Chain</h1>
+<p>155 companies mapped across 6 supply chain stages — click any stage to expand, then click a company for details</p>
+</div>
+<div id="app"></div>
+<div class="legend">
+<div class="li"><div class="ld" style="background:#1D9E75"></div>Raw materials (6)</div>
+<div class="li"><div class="ld" style="background:#7F77DD"></div>Extraction (24)</div>
+<div class="li"><div class="ld" style="background:#378ADD"></div>CDMO (85)</div>
+<div class="li"><div class="ld" style="background:#BA7517"></div>Branded (27)</div>
+<div class="li"><div class="ld" style="background:#D85A30"></div>Distribution (9)</div>
+<div class="li"><div class="ld" style="background:#D4537E"></div>Regulatory (4)</div>
+</div>
+<div class="ft">GG Ventures — Industry Research, April 2026</div>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

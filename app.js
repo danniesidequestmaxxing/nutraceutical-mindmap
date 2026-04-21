@@ -26,8 +26,11 @@ function render(queryData) {
   companies.forEach(g => {
     stageCounts[g.s] = (stageCounts[g.s] || 0) + (g.cs || []).length;
   });
-  legendEl.innerHTML = stages.map(s => {
-    const dotColor = getComputedStyle(document.documentElement).getPropertyValue('--' + s.c + '-dot') || '';
+  // Only show stages that actually have companies; hide empty stages from
+  // both the mindmap and legend so a sparse result doesn't look broken.
+  const visibleStages = stages.filter(s => (stageCounts[s.id] || 0) > 0);
+
+  legendEl.innerHTML = visibleStages.map(s => {
     return `<div class="li ${s.c}"><div class="ld"></div>${s.n} (${stageCounts[s.id] || 0})</div>`;
   }).join('');
 
@@ -50,7 +53,7 @@ function render(queryData) {
   });
 
   let html = '';
-  stages.forEach((s, idx) => {
+  visibleStages.forEach((s, idx) => {
     const groups = groupsByStage[s.id] || [];
     const cnt = (stageCounts[s.id] || 0);
     html += `<div class="stg ${s.c}" id="stg${s.id}">
@@ -81,7 +84,7 @@ ${web}${sec}
       html += '</div>';
     });
     html += `</div></div>`;
-    if (idx < stages.length - 1) html += '<div class="conn"></div>';
+    if (idx < visibleStages.length - 1) html += '<div class="conn"></div>';
   });
   app.innerHTML = html;
 }
@@ -179,26 +182,36 @@ if (goBtn) {
   libSel.addEventListener('change', (e) => { if (e.target.value) loadSlug(e.target.value); });
 }
 
+function showEmptyState() {
+  titleEl.textContent = 'Supply Chain Mindmap';
+  document.title = 'Supply Chain Mindmap';
+  legendEl.innerHTML = '';
+  metaEl.textContent = '';
+  app.innerHTML = `
+    <div class="empty">
+      <p>Type any industry in the box above and press <strong>Research</strong>.</p>
+      <ol>
+        <li>Claude proposes supply chain stages specific to that industry</li>
+        <li>Google (via SerpAPI) discovers companies operating in each stage</li>
+        <li>Claude classifies every company into a stage and renders it here</li>
+      </ol>
+      <p>Runs take roughly a minute. Past queries are cached — pick one from <strong>— past queries —</strong> to reopen instantly.</p>
+    </div>
+  `;
+}
+
 async function bootstrap() {
   const params = new URLSearchParams(location.search);
   const slug = params.get('q');
   await loadLibrary();
+  if (!slug) {
+    showEmptyState();
+    return;
+  }
   try {
-    if (slug) await loadSlug(slug);
-    else await loadSlug('malaysia-nutraceutical');
+    await loadSlug(slug);
   } catch (e) {
-    // Fallback to bundled data.js globals if the backend isn't reachable
-    if (typeof D !== 'undefined' && typeof stageLabels !== 'undefined') {
-      const stages = Object.keys(stageLabels).map(k => ({
-        id: k, n: stageLabels[k].n, t: stageLabels[k].t, c: stageLabels[k].c,
-      }));
-      render({
-        query: 'Malaysia Nutraceutical Supply Chain',
-        stages, companies: D, meta: null,
-      });
-    } else {
-      app.innerHTML = '<p style="color:var(--tx2);font-size:13px;padding:20px;text-align:center">No data loaded. Try a search above.</p>';
-    }
+    showEmptyState();
   }
 }
 

@@ -228,6 +228,7 @@ async def run_research(
         proposal = await claude.propose_stages(query)
         stages_raw = proposal.get("stages") or []
         serp_queries = proposal.get("serp_queries") or []
+        known_brands = [b for b in (proposal.get("known_brands") or []) if isinstance(b, str) and b.strip()]
         if not stages_raw or not serp_queries:
             raise RuntimeError("Stage proposal was empty")
         stages = _assign_stage_colors(stages_raw)
@@ -235,11 +236,24 @@ async def run_research(
         if claude.total_cost_usd > MAX_ANTHROPIC_SPEND_USD:
             raise RuntimeError("Anthropic spend cap reached")
 
-        await progress("queries_built", 15, f"Generated {len(serp_queries)} search queries")
+        # Each known brand gets its own explicit SerpAPI query. The region
+        # hint (the raw user query) is appended so ambiguous brand names
+        # disambiguate correctly ("Mamee Malaysia" not "mamee").
+        brand_queries = [f"{b} {query}" for b in known_brands[:15]]
 
-        # Step 4: discovery fanout
+        await progress(
+            "queries_built",
+            15,
+            f"Generated {len(serp_queries)} search queries + {len(brand_queries)} brand lookups",
+        )
+
+        # Step 4: discovery fanout. Brand queries run first so their candidates
+        # are added to the dedupe list before the MAX_COMPANIES cap kicks in;
+        # this prevents household names from being crowded out by noisy generic
+        # hits on upstream ingredient suppliers.
+        all_serp = brand_queries + serp_queries[:16]
         discovery = await asyncio.gather(
-            *[serp.search(q, gl=gl, num=10) for q in serp_queries[:15]],
+            *[serp.search(q, gl=gl, num=10) for q in all_serp],
             return_exceptions=True,
         )
         all_candidates: list[dict[str, str]] = []
@@ -292,6 +306,7 @@ async def run_research(
             "companies": companies,
             "meta": {
                 "serp_queries": serp_queries,
+                "known_brands": known_brands,
                 "focus": proposal.get("focus", "balanced"),
                 "n_candidates": len(candidates),
                 "n_classified": len(classified),

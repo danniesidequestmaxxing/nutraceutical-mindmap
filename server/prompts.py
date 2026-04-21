@@ -7,6 +7,7 @@ Output strictly a JSON object with this shape and no prose:
     ...
   ],
   "focus": "upstream|midstream|downstream|balanced",
+  "known_brands": ["10-15 well-known company or brand names you believe are significant in this industry and region"],
   "serp_queries": ["google query 1", "google query 2", ... 12-16 diverse queries]
 }
 
@@ -30,6 +31,12 @@ Query budget (MUST follow):
 - Include at least one directory-style query using site:linkedin.com/company or site:crunchbase.com targeting the most important stage per the focus.
 - Include at least one query using the region's language if distinct, e.g. "perusahaan snek Malaysia" for Malaysia, "Hersteller" for Germany, "製造商" for Taiwan.
 - Queries should be in English except the language-native one; include the region name in every query that is not already region-constrained by language.
+
+Known brands list:
+- List 10-15 companies or brands you already know are significant players in this industry+region, drawn from your own knowledge. These will be used to prime explicit Google searches so household names don't get missed by generic keyword queries.
+- Prefer widely recognized names. If the query says "brands", list consumer-facing brand names. If "manufacturers", list manufacturer names. If uncertain, list the fewer-but-better known.
+- It is fine to return just 5-8 names if you are not confident there are more; do not invent names.
+- Use the common short name (e.g. "Mamee", "Julie's", "Mister Potato"), not the legal entity name.
 """
 
 

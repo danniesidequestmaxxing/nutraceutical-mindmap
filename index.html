@@ -104,6 +104,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;color:var(--tx);background:var(-
 <div id="legend" class="legend"></div>
 <div class="ft">Runs cache per-query. Re-opening a past industry is instant.</div>
 
+<script>
+// When hosting frontend on Vercel and backend on Render (or similar),
+// set this to the backend URL, e.g. "https://your-app.onrender.com".
+// Leave as empty string when the frontend is served by the same host as the API.
+window.API_BASE = "";
+</script>
 <script src="data.js"></script>
 <script src="app.js"></script>
 </body>

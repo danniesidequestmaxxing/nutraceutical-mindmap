@@ -49,12 +49,58 @@ uvicorn server.main:app --reload
 Open http://localhost:8000. The seeded Malaysia entry should render exactly
 as before. Type a new industry to run a fresh research job.
 
-## Deploy to Render
+## Deploy: split (Vercel frontend + Render backend)
+
+This is the recommended deploy: static frontend on Vercel, long-running
+pipeline on Render.
+
+### 1. Backend on Render
+
+1. Push this repo to GitHub.
+2. Render dashboard → **New +** → **Blueprint** → point at `render.yaml`.
+3. Fill in `ANTHROPIC_API_KEY` and `SERPAPI_KEY`.
+4. Deploy. Build runs `python -m server.seed`, pre-populating the
+   Malaysia entry. Note the service URL,
+   e.g. `https://supply-chain-mindmap.onrender.com`.
+5. Smoke-test: `curl https://<your-render-url>/healthz` should return
+   `{"ok":true, "spent_today_usd":...}`.
+
+### 2. Frontend on Vercel
+
+1. Edit `index.html` line that sets `window.API_BASE` and paste your
+   Render URL in the quotes:
+   ```html
+   <script>window.API_BASE = "https://your-app.onrender.com";</script>
+   ```
+2. Commit and push.
+3. Vercel dashboard → **Add New** → **Project** → import the same repo.
+   Vercel auto-detects a static site. `.vercelignore` keeps backend files
+   out of the deploy. No build command needed.
+4. Open the Vercel URL. The Malaysia mindmap should load from the Render
+   backend, and typing a new industry triggers a full research run with
+   live progress via SSE.
+
+### CORS
+
+The backend sets `Access-Control-Allow-Origin: *` by default so the
+Vercel frontend can call it. If you want to lock this down to just your
+Vercel domain, edit `server/main.py`'s `CORSMiddleware(allow_origins=...)`.
+
+### Free-tier notes
+
+- Render free web service spins down after 15 min idle — first request
+  after a cold start is slow. Upgrade to $7/mo Starter for always-on.
+- Vercel Hobby serves unlimited static — the frontend is free forever.
+
+## Deploy: all-on-Render (single origin)
+
+If you prefer a single URL and don't need Vercel:
 
 1. Push to GitHub.
-2. Create a new Blueprint on Render pointing at `render.yaml`.
-3. Fill in `ANTHROPIC_API_KEY` and `SERPAPI_KEY` in the dashboard.
-4. Build runs `python -m server.seed` so the Malaysia entry is pre-populated.
+2. Render dashboard → **New +** → **Blueprint** → `render.yaml`.
+3. Add both API keys.
+4. Done. FastAPI serves the frontend too, so no CORS setup and no
+   `window.API_BASE` change needed.
 
 ## Per-query cost / latency
 

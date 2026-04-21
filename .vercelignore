@@ -1,0 +1,12 @@
+server/
+requirements.txt
+render.yaml
+.env
+.env.example
+data/
+*.db
+__pycache__/
+*.pyc
+.venv/
+venv/
+/root/.claude/plans/

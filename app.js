@@ -1,3 +1,6 @@
+const API_BASE = (window.API_BASE || '').replace(/\/$/, '');
+const api = (path) => API_BASE + path;
+
 const app = document.getElementById('app');
 const qInput = document.getElementById('q');
 const goBtn = document.getElementById('go');
@@ -103,7 +106,7 @@ window.tc = tc;
 
 async function loadLibrary() {
   try {
-    const r = await fetch('/api/queries');
+    const r = await fetch(api('/api/queries'));
     if (!r.ok) return;
     const items = await r.json();
     libSel.innerHTML = '<option value="">— past queries —</option>' +
@@ -112,7 +115,7 @@ async function loadLibrary() {
 }
 
 async function loadSlug(slug) {
-  const r = await fetch('/api/queries/' + encodeURIComponent(slug));
+  const r = await fetch(api('/api/queries/' + encodeURIComponent(slug)));
   if (!r.ok) throw new Error('Not found');
   const doc = await r.json();
   render(doc);
@@ -134,7 +137,7 @@ async function startResearch() {
   goBtn.disabled = true;
   setProgress(2, 'Starting…');
   try {
-    const r = await fetch('/api/research', {
+    const r = await fetch(api('/api/research'), {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ query }),
@@ -144,7 +147,7 @@ async function startResearch() {
       throw new Error(err.detail || 'Request failed');
     }
     const { slug } = await r.json();
-    const es = new EventSource('/api/research/' + encodeURIComponent(slug) + '/stream');
+    const es = new EventSource(api('/api/research/' + encodeURIComponent(slug) + '/stream'));
     es.onmessage = async (ev) => {
       try {
         const evt = JSON.parse(ev.data);

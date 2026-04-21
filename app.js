@@ -26,8 +26,11 @@ function render(queryData) {
   companies.forEach(g => {
     stageCounts[g.s] = (stageCounts[g.s] || 0) + (g.cs || []).length;
   });
-  legendEl.innerHTML = stages.map(s => {
-    const dotColor = getComputedStyle(document.documentElement).getPropertyValue('--' + s.c + '-dot') || '';
+  // Only show stages that actually have companies; hide empty stages from
+  // both the mindmap and legend so a sparse result doesn't look broken.
+  const visibleStages = stages.filter(s => (stageCounts[s.id] || 0) > 0);
+
+  legendEl.innerHTML = visibleStages.map(s => {
     return `<div class="li ${s.c}"><div class="ld"></div>${s.n} (${stageCounts[s.id] || 0})</div>`;
   }).join('');
 
@@ -50,7 +53,7 @@ function render(queryData) {
   });
 
   let html = '';
-  stages.forEach((s, idx) => {
+  visibleStages.forEach((s, idx) => {
     const groups = groupsByStage[s.id] || [];
     const cnt = (stageCounts[s.id] || 0);
     html += `<div class="stg ${s.c}" id="stg${s.id}">
@@ -81,7 +84,7 @@ ${web}${sec}
       html += '</div>';
     });
     html += `</div></div>`;
-    if (idx < stages.length - 1) html += '<div class="conn"></div>';
+    if (idx < visibleStages.length - 1) html += '<div class="conn"></div>';
   });
   app.innerHTML = html;
 }

@@ -7,7 +7,8 @@ import httpx
 
 from server.config import SERPAPI_KEY, SERP_CONCURRENCY
 
-SERP_ENDPOINT = "https://serpapi.com/search.json"
+# serper.dev — Google-backed search API, cheaper than serpapi.com.
+SERP_ENDPOINT = "https://google.serper.dev/search"
 
 _GL_HINTS = {
     "germany": "de", "deutschland": "de",
@@ -78,30 +79,26 @@ class SerpClient:
     async def search(self, query: str, gl: str | None = None, num: int = 10) -> list[dict[str, Any]]:
         if not self.api_key:
             raise RuntimeError("SERPAPI_KEY is not set")
-        params: dict[str, Any] = {
-            "engine": "google",
-            "q": query,
-            "num": num,
-            "api_key": self.api_key,
-        }
+        payload: dict[str, Any] = {"q": query, "num": num}
         if gl:
-            params["gl"] = gl
+            payload["gl"] = gl
+        headers = {"X-API-KEY": self.api_key, "Content-Type": "application/json"}
         async with self.sem:
             last_err: Exception | None = None
             for attempt in range(3):
                 try:
-                    r = await self.client.get(SERP_ENDPOINT, params=params)
+                    r = await self.client.post(SERP_ENDPOINT, json=payload, headers=headers)
                     if r.status_code == 429:
                         await asyncio.sleep(2 ** attempt)
                         continue
                     r.raise_for_status()
                     self.queries_made += 1
                     data = r.json()
-                    return data.get("organic_results", []) or []
+                    return data.get("organic", []) or []
                 except Exception as e:
                     last_err = e
                     await asyncio.sleep(1.5 * (attempt + 1))
-            raise RuntimeError(f"SerpAPI failed after retries: {last_err}")
+            raise RuntimeError(f"Serper failed after retries: {last_err}")
 
 
 _COMPANY_SUFFIXES = re.compile(

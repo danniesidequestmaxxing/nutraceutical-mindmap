@@ -23,6 +23,17 @@ _channels: dict[str, asyncio.Queue] = {}
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await cache.init_db()
+    # Seed the Malaysia entry on every boot. Safe to re-run (ON CONFLICT UPDATE).
+    # Must happen at runtime, not build time, because the persistent disk is
+    # only mounted at runtime on hosts like Render.
+    try:
+        from server.seed import parse_data_js
+        if not await cache.get_query("malaysia-nutraceutical"):
+            doc = parse_data_js(STATIC_DIR / "data.js")
+            await cache.put_query(doc["slug"], doc["query"], "complete", doc, 0)
+    except Exception as e:
+        # Don't block startup if seed fails; app still works for new queries.
+        print(f"[seed] skipped: {e}")
     yield
 
 

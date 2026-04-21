@@ -1,4 +1,5 @@
 import asyncio
+import re
 import time
 from collections import OrderedDict
 from typing import Any, AsyncIterator, Awaitable, Callable
@@ -16,6 +17,34 @@ from server.serp_client import (
     SerpClient,
     candidates_from_results,
     detect_gl,
+)
+
+
+_COMPANY_SUFFIX_RE = re.compile(
+    r"\b(gmbh|ag|inc|incorporated|corp|corporation|ltd|limited|llc|plc|"
+    r"pte|sdn|bhd|berhad|holdings|holding|group|industries|technologies|"
+    r"technology|tech|co|company|sa|sas|spa|bv|nv|oyj|ab|aps|as|oy|"
+    r"international|intl|global|enterprise|enterprises)\b\.?",
+    re.IGNORECASE,
+)
+
+
+def _normalize_name(name: str) -> str:
+    """Normalize a company name for fuzzy dedupe: lowercase, strip punctuation,
+    corporate suffixes, and locations in parentheses."""
+    s = name.lower()
+    s = re.sub(r"\([^)]*\)", " ", s)          # drop "(Munich)" etc.
+    s = re.sub(r"[^a-z0-9\s]", " ", s)         # punctuation
+    s = _COMPANY_SUFFIX_RE.sub(" ", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+
+_NON_COMPANY_DESC = re.compile(
+    r"^\s*(this\s+(refers|represents|appears|is|entry|describes)|"
+    r"a\s+(broader|general)\s+|the\s+(broader|entire)\s+|"
+    r"limited\s+information|unclear\s+)",
+    re.IGNORECASE,
 )
 
 
@@ -60,6 +89,12 @@ async def unique_slug(query: str) -> str:
 
 
 def _dedupe_candidates(cands: list[dict[str, str]], cap: int) -> list[dict[str, str]]:
+    """First-pass dedupe by normalized domain, second-pass by normalized name.
+
+    Many companies appear under multiple variants ("Wacker", "Wacker Polysilicon
+    AG", "Wacker Chemie AG") with different or missing domains; merging these
+    prevents the classifier from emitting duplicate entries.
+    """
     by_domain: OrderedDict[str, dict[str, str]] = OrderedDict()
     for c in cands:
         d = c.get("domain", "")
@@ -73,9 +108,28 @@ def _dedupe_candidates(cands: list[dict[str, str]], cap: int) -> list[dict[str, 
                 existing["snippets"].append(c["snippet"])
             if len(c["name"]) < len(existing["name"]):
                 existing["name"] = c["name"]
-        if len(by_domain) >= cap:
+
+    # Second pass: collapse by normalized name
+    by_norm: OrderedDict[str, dict[str, Any]] = OrderedDict()
+    for cand in by_domain.values():
+        norm = _normalize_name(cand["name"])
+        if not norm:
+            continue
+        if norm not in by_norm:
+            by_norm[norm] = cand
+        else:
+            kept = by_norm[norm]
+            # Merge snippets
+            for s in cand.get("snippets", []):
+                if s and s not in kept["snippets"] and len(kept["snippets"]) < 8:
+                    kept["snippets"].append(s)
+            # Prefer the variant with a domain over one without
+            if not kept.get("domain") and cand.get("domain"):
+                kept["domain"] = cand["domain"]
+                kept["name"] = cand["name"]
+        if len(by_norm) >= cap:
             break
-    return list(by_domain.values())
+    return list(by_norm.values())
 
 
 async def _enrich_one(serp: SerpClient, cand: dict[str, Any], gl: str | None) -> dict[str, Any]:
@@ -98,12 +152,41 @@ async def _enrich_one(serp: SerpClient, cand: dict[str, Any], gl: str | None) ->
     return cand
 
 
+def _looks_non_company(entry: dict[str, Any]) -> bool:
+    """Post-classification filter: description or name reveals this isn't a
+    single company (Claude sometimes classifies anyway even when told to drop)."""
+    d = (entry.get("d") or "").strip()
+    n = (entry.get("n") or "").strip()
+    if not n:
+        return True
+    if _NON_COMPANY_DESC.match(d):
+        return True
+    # Name looks like a phrase/report not a proper noun
+    if re.search(r"\b(Market|Industry|Report|Overview|Cluster|Ecosystem|Top\s+\d+)\b", n, re.I):
+        return True
+    return False
+
+
 def _group_companies(stages: list[dict[str, Any]], classified: list[dict[str, Any]]) -> list[dict[str, Any]]:
     valid_stage_ids = {s["id"] for s in stages}
-    # Fallback: if Claude returns an id that isn't in the stage list, drop it to first stage
     fallback = stages[0]["id"] if stages else "1"
     buckets: dict[str, dict[str, list[dict[str, Any]]]] = {}
+    seen_norm: set[str] = set()
+    dropped_count = 0
     for c in classified:
+        if c is None or not isinstance(c, dict):
+            dropped_count += 1
+            continue
+        if _looks_non_company(c):
+            dropped_count += 1
+            continue
+        # Final fuzzy dedupe in case Claude emitted the same entity twice
+        norm = _normalize_name(c.get("n", ""))
+        if norm in seen_norm:
+            dropped_count += 1
+            continue
+        seen_norm.add(norm)
+
         s = str(c.get("s") or fallback)
         if s not in valid_stage_ids:
             s = fallback
@@ -120,12 +203,11 @@ def _group_companies(stages: list[dict[str, Any]], classified: list[dict[str, An
     for s in stages:
         groups = buckets.get(s["id"], {})
         for g_name, companies in groups.items():
-            # Skip empty entries
             companies = [c for c in companies if c["n"]]
             if not companies:
                 continue
             out.append({"s": s["id"], "g": g_name, "cs": companies})
-    return out
+    return out, dropped_count
 
 
 async def run_research(
@@ -201,7 +283,7 @@ async def run_research(
 
         await progress("classifying", 90, f"Classified {len(classified)} companies")
 
-        companies = _group_companies(stages, classified)
+        companies, dropped = _group_companies(stages, classified)
         doc = {
             "slug": slug,
             "query": query,
@@ -210,8 +292,10 @@ async def run_research(
             "companies": companies,
             "meta": {
                 "serp_queries": serp_queries,
+                "focus": proposal.get("focus", "balanced"),
                 "n_candidates": len(candidates),
                 "n_classified": len(classified),
+                "n_dropped": dropped,
                 "serp_calls": serp.queries_made,
                 "cost_usd": round(claude.total_cost_usd, 4),
                 "elapsed_s": round(time.time() - started, 1),

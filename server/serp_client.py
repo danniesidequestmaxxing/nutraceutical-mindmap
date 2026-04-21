@@ -34,10 +34,32 @@ _GL_HINTS = {
 }
 
 _BLOCKED_DOMAINS = {
+    # Social / forum
     "wikipedia.org", "youtube.com", "facebook.com", "twitter.com", "x.com",
     "reddit.com", "quora.com", "pinterest.com", "instagram.com", "tiktok.com",
-    "amazon.com", "ebay.com", "indeed.com", "glassdoor.com",
+    # Marketplaces / jobs
+    "amazon.com", "ebay.com", "indeed.com", "glassdoor.com", "shopee.com.my",
+    "lazada.com.my", "lazada.com", "alibaba.com", "aliexpress.com",
+    # Business directories / aggregators that pollute candidate lists
+    "ensun.io", "trademo.com", "f6s.com", "owler.com", "zoominfo.com",
+    "crunchbase.com", "rocketreach.co", "apollo.io", "signalhire.com",
+    "europages.com", "kompass.com", "made-in-china.com", "indiamart.com",
+    "tradewheel.com", "go4worldbusiness.com", "exportersindia.com",
+    "panjiva.com", "importyeti.com",
+    # Market-research / news that the classifier shouldn't treat as companies
+    "sphericalinsights.com", "grandviewresearch.com", "marketsandmarkets.com",
+    "mordorintelligence.com", "fortunebusinessinsights.com",
+    "globenewswire.com", "prnewswire.com", "businesswire.com",
 }
+
+# Title patterns that indicate the result isn't a single company (market
+# research reports, industry overviews, regional clusters, listicles).
+_NON_COMPANY_TITLE = re.compile(
+    r"\b(Market|Industry\s+(Report|Overview|Analysis)|Report|Overview|"
+    r"Top\s+\d+|List\s+of|Cluster|Ecosystem|Forecast|Outlook|Statistics|"
+    r"Directory|Guide\s+to|Suppliers?\s+List|Companies?\s+List)\b",
+    re.IGNORECASE,
+)
 
 
 def detect_gl(query: str) -> str | None:
@@ -123,12 +145,28 @@ def extract_candidate_name(result: dict[str, Any]) -> str:
     return title.strip()[:80]
 
 
+def is_non_company_title(title: str) -> bool:
+    """Reject titles that look like market reports, listicles, or cluster overviews."""
+    if not title:
+        return True
+    if _NON_COMPANY_TITLE.search(title):
+        return True
+    # All-caps reports like "GERMAN SOLAR INDUSTRY"
+    words = [w for w in re.findall(r"\w+", title) if len(w) >= 3]
+    if words and sum(w.isupper() for w in words) / len(words) > 0.6 and len(words) >= 3:
+        return True
+    return False
+
+
 def candidates_from_results(results: list[dict[str, Any]]) -> list[dict[str, str]]:
     out: list[dict[str, str]] = []
     for r in results:
         link = r.get("link") or ""
         domain = normalize_domain(link)
         if is_blocked(domain):
+            continue
+        title = r.get("title") or ""
+        if is_non_company_title(title):
             continue
         name = extract_candidate_name(r)
         if not name:

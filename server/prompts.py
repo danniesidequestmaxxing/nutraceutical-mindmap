@@ -6,7 +6,8 @@ Output strictly a JSON object with this shape and no prose:
     {"id": "1", "n": "Short stage name (e.g. 'Polysilicon production')", "t": "Upstream|Midstream|Manufacturing|Downstream|Go-to-market|Cross-cutting"},
     ...
   ],
-  "serp_queries": ["google query 1", "google query 2", ... 10-14 diverse queries covering each stage and the region if given]
+  "focus": "upstream|midstream|downstream|balanced",
+  "serp_queries": ["google query 1", "google query 2", ... 12-16 diverse queries]
 }
 
 Rules:
@@ -14,7 +15,21 @@ Rules:
 - Always include at least one cross-cutting stage for regulators/standards/testing if relevant.
 - `t` (tier label) is one of: Upstream, Midstream, Manufacturing, Downstream, Go-to-market, Cross-cutting.
 - Ids are strings "1".."6" in flow order.
-- `serp_queries` must include per-stage role queries, per-region queries, and at least one directory-style query using site:linkedin.com/company or site:crunchbase.com. Queries should be in English.
+
+Detecting user intent — set `focus` based on keywords in the query:
+- If the query contains "brands", "brand", "products", "consumer", "retail", "DTC", "startups", or names an end-user-facing category → focus = "downstream".
+- If it contains "manufacturers", "factories", "producers", "fab", "OEM" → focus = "midstream".
+- If it contains "raw materials", "feedstock", "mining", "extraction" → focus = "upstream".
+- Otherwise → focus = "balanced".
+
+Query budget (MUST follow):
+- At least 2 queries per stage you proposed.
+- If focus = "downstream": at least 5 queries targeting the last two stages (consumer brands, retail, distributors). Name specific product categories and well-known brand archetypes (e.g. for snacks: "potato chip brands Malaysia", "local biscuit manufacturers Malaysia", "Malaysian confectionery brands", "wafer cracker brands Malaysia").
+- If focus = "upstream": at least 5 queries for the first two stages (raw materials, feedstock suppliers).
+- If focus = "midstream": at least 5 queries for the middle stages (processors, contract manufacturers, ingredient makers).
+- Include at least one directory-style query using site:linkedin.com/company or site:crunchbase.com targeting the most important stage per the focus.
+- Include at least one query using the region's language if distinct, e.g. "perusahaan snek Malaysia" for Malaysia, "Hersteller" for Germany, "製造商" for Taiwan.
+- Queries should be in English except the language-native one; include the region name in every query that is not already region-constrained by language.
 """
 
 
@@ -38,8 +53,12 @@ Return a JSON array (no prose) where each element is:
 }}
 
 Strict rules:
-- If the snippets are too thin to be confident, still return an entry but keep `d` short and `c` empty.
+- ONE entry per input company, in the same order as input.
+- DROP the entry (return `null` in its position) if ANY of these are true:
+  * The snippets describe a market-research report, industry overview, directory, listicle, or a region/cluster as a whole rather than a single company.
+  * The "company" is clearly not actually based in or operating in the region named in the industry query above.
+  * The description you would write starts with "This refers to", "This represents", "This appears to be", or similar hedging because the snippets aren't about one company.
+  * The name is a phrase like "Market", "Industry", "Report", "Cluster", "Top 100", "Overview" rather than a proper-noun company name.
 - Do NOT fabricate URLs, addresses, certifications, or product names.
-- One entry per input company, in the same order as input.
-- Return only the JSON array.
+- Return only the JSON array. Use `null` for entries you drop; do not omit positions.
 """

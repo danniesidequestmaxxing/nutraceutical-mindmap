@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Malaysia Nutraceutical Supply Chain — 155 Companies</title>
-<meta name="description" content="Interactive supply chain mind map of 155 Malaysian nutraceutical companies across 6 stages.">
+<title>Supply Chain Mindmap</title>
+<meta name="description" content="Type any industry and map its supply chain into an interactive dashboard.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
 <style>
@@ -12,9 +12,21 @@
 @media(prefers-color-scheme:dark){:root{--bg:#1a1a1a;--bg2:#252525;--tx:#e5e5e3;--tx2:#9ca3af;--tx3:#6b7280;--bd:#333;--bd2:#444;--info:#60a5fa}}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',system-ui,sans-serif;color:var(--tx);background:var(--bg);max-width:720px;margin:0 auto;padding:24px 16px}
-.hd{text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--bd)}
+.hd{text-align:center;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--bd)}
 .hd h1{font-family:'Fraunces',Georgia,serif;font-size:22px;font-weight:600;margin-bottom:4px}
 .hd p{font-size:12px;color:var(--tx2)}
+.bar{display:flex;gap:6px;margin-bottom:8px;align-items:center;flex-wrap:wrap}
+.bar input{flex:1 1 220px;min-width:0;padding:8px 10px;font:inherit;font-size:13px;color:var(--tx);background:var(--bg2);border:1px solid var(--bd);border-radius:6px;outline:none}
+.bar input:focus{border-color:var(--info)}
+.bar button{padding:8px 14px;font:inherit;font-size:13px;font-weight:500;color:#fff;background:var(--info);border:none;border-radius:6px;cursor:pointer}
+.bar button:disabled{opacity:.5;cursor:wait}
+.bar select{padding:7px 8px;font:inherit;font-size:12px;color:var(--tx);background:var(--bg2);border:1px solid var(--bd);border-radius:6px;max-width:200px}
+.meta{font-size:11px;color:var(--tx3);margin-bottom:10px;text-align:center}
+.prog{display:none;margin-bottom:10px;padding:8px 10px;background:var(--bg2);border:1px solid var(--bd);border-radius:6px}
+.prog.show{display:block}
+.prog .pb{height:3px;background:var(--bd);border-radius:2px;overflow:hidden;margin-bottom:4px}
+.prog .pb > div{height:100%;background:var(--info);width:0;transition:width .3s ease}
+.prog .pm{font-size:11px;color:var(--tx2)}
 .stg{margin-bottom:3px}
 .sh{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;user-select:none;border-radius:8px;transition:background .12s}
 .sh:hover{background:var(--bg2)}
@@ -47,38 +59,50 @@ body{font-family:'DM Sans',system-ui,sans-serif;color:var(--tx);background:var(-
 .conn::after{content:'';position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--bd)}
 .legend{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:20px;padding-top:12px;border-top:1px solid var(--bd)}
 .li{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx2)}
-.ld{width:8px;height:8px;border-radius:50%}
+.li .ld{width:8px;height:8px;border-radius:50%}
 .ft{text-align:center;margin-top:24px;padding-top:12px;border-top:1px solid var(--bd);font-size:11px;color:var(--tx3)}
-.s1 .sn,.s1 .badge{background:#E1F5EE;color:#0F6E56}.s1 .cd{background:#1D9E75}.s1 .tag{background:#E1F5EE;color:#085041}
-.s2 .sn,.s2 .badge{background:#EEEDFE;color:#534AB7}.s2 .cd{background:#7F77DD}.s2 .tag{background:#EEEDFE;color:#3C3489}
-.s3 .sn,.s3 .badge{background:#E6F1FB;color:#185FA5}.s3 .cd{background:#378ADD}.s3 .tag{background:#E6F1FB;color:#0C447C}
-.s4 .sn,.s4 .badge{background:#FAEEDA;color:#854F0B}.s4 .cd{background:#BA7517}.s4 .tag{background:#FAEEDA;color:#633806}
-.s5 .sn,.s5 .badge{background:#FAECE7;color:#993C1D}.s5 .cd{background:#D85A30}.s5 .tag{background:#FAECE7;color:#712B13}
-.s6 .sn,.s6 .badge{background:#FBEAF0;color:#993556}.s6 .cd{background:#D4537E}.s6 .tag{background:#FBEAF0;color:#72243E}
+.s1 .sn,.s1 .badge{background:#E1F5EE;color:#0F6E56}.s1 .cd,.s1 .ld{background:#1D9E75}.s1 .tag{background:#E1F5EE;color:#085041}
+.s2 .sn,.s2 .badge{background:#EEEDFE;color:#534AB7}.s2 .cd,.s2 .ld{background:#7F77DD}.s2 .tag{background:#EEEDFE;color:#3C3489}
+.s3 .sn,.s3 .badge{background:#E6F1FB;color:#185FA5}.s3 .cd,.s3 .ld{background:#378ADD}.s3 .tag{background:#E6F1FB;color:#0C447C}
+.s4 .sn,.s4 .badge{background:#FAEEDA;color:#854F0B}.s4 .cd,.s4 .ld{background:#BA7517}.s4 .tag{background:#FAEEDA;color:#633806}
+.s5 .sn,.s5 .badge{background:#FAECE7;color:#993C1D}.s5 .cd,.s5 .ld{background:#D85A30}.s5 .tag{background:#FAECE7;color:#712B13}
+.s6 .sn,.s6 .badge{background:#FBEAF0;color:#993556}.s6 .cd,.s6 .ld{background:#D4537E}.s6 .tag{background:#FBEAF0;color:#72243E}
+.s7 .sn,.s7 .badge{background:#E0F4F5;color:#0E6E75}.s7 .cd,.s7 .ld{background:#23A5AD}.s7 .tag{background:#E0F4F5;color:#07494F}
+.s8 .sn,.s8 .badge{background:#EEEBFC;color:#5E3AB1}.s8 .cd,.s8 .ld{background:#8E6ED6}.s8 .tag{background:#EEEBFC;color:#432680}
+.s9 .sn,.s9 .badge{background:#FBF2DB;color:#8A6408}.s9 .cd,.s9 .ld{background:#D09A1A}.s9 .tag{background:#FBF2DB;color:#634704}
+.s10 .sn,.s10 .badge{background:#FBE9EA;color:#993644}.s10 .cd,.s10 .ld{background:#D4546E}.s10 .tag{background:#FBE9EA;color:#72252F}
 @media(prefers-color-scheme:dark){
-.s1 .sn,.s1 .badge{background:#04342C;color:#5DCAA5}.s1 .cd{background:#5DCAA5}.s1 .tag{background:#04342C;color:#9FE1CB}
-.s2 .sn,.s2 .badge{background:#26215C;color:#AFA9EC}.s2 .cd{background:#AFA9EC}.s2 .tag{background:#26215C;color:#CECBF6}
-.s3 .sn,.s3 .badge{background:#042C53;color:#85B7EB}.s3 .cd{background:#85B7EB}.s3 .tag{background:#042C53;color:#B5D4F4}
-.s4 .sn,.s4 .badge{background:#412402;color:#EF9F27}.s4 .cd{background:#EF9F27}.s4 .tag{background:#412402;color:#FAC775}
-.s5 .sn,.s5 .badge{background:#4A1B0C;color:#F0997B}.s5 .cd{background:#F0997B}.s5 .tag{background:#4A1B0C;color:#F5C4B3}
-.s6 .sn,.s6 .badge{background:#4B1528;color:#ED93B1}.s6 .cd{background:#ED93B1}.s6 .tag{background:#4B1528;color:#F4C0D1}
+.s1 .sn,.s1 .badge{background:#04342C;color:#5DCAA5}.s1 .cd,.s1 .ld{background:#5DCAA5}.s1 .tag{background:#04342C;color:#9FE1CB}
+.s2 .sn,.s2 .badge{background:#26215C;color:#AFA9EC}.s2 .cd,.s2 .ld{background:#AFA9EC}.s2 .tag{background:#26215C;color:#CECBF6}
+.s3 .sn,.s3 .badge{background:#042C53;color:#85B7EB}.s3 .cd,.s3 .ld{background:#85B7EB}.s3 .tag{background:#042C53;color:#B5D4F4}
+.s4 .sn,.s4 .badge{background:#412402;color:#EF9F27}.s4 .cd,.s4 .ld{background:#EF9F27}.s4 .tag{background:#412402;color:#FAC775}
+.s5 .sn,.s5 .badge{background:#4A1B0C;color:#F0997B}.s5 .cd,.s5 .ld{background:#F0997B}.s5 .tag{background:#4A1B0C;color:#F5C4B3}
+.s6 .sn,.s6 .badge{background:#4B1528;color:#ED93B1}.s6 .cd,.s6 .ld{background:#ED93B1}.s6 .tag{background:#4B1528;color:#F4C0D1}
+.s7 .sn,.s7 .badge{background:#033438;color:#6BD1D8}.s7 .cd,.s7 .ld{background:#6BD1D8}.s7 .tag{background:#033438;color:#A8E4E9}
+.s8 .sn,.s8 .badge{background:#291B55;color:#BCA4EE}.s8 .cd,.s8 .ld{background:#BCA4EE}.s8 .tag{background:#291B55;color:#D6C6F4}
+.s9 .sn,.s9 .badge{background:#402D02;color:#EFC45A}.s9 .cd,.s9 .ld{background:#EFC45A}.s9 .tag{background:#402D02;color:#F6DC95}
+.s10 .sn,.s10 .badge{background:#451620;color:#ED96A5}.s10 .cd,.s10 .ld{background:#ED96A5}.s10 .tag{background:#451620;color:#F4BDC6}
 }
 </style>
 </head>
 <body>
 <div class="hd">
-<h1>Malaysia Nutraceutical Supply Chain</h1>
-<p>155 companies mapped across 6 supply chain stages — click any stage to expand, then click a company for details</p>
+<h1 id="title">Supply Chain Mindmap</h1>
+<p>Type an industry (e.g. “solar panels in Germany”) — Claude researches via Google, classifies every company into supply chain stages, and renders it here.</p>
 </div>
+<div class="bar">
+<input id="q" placeholder="Industry, e.g. solar panels in Germany" autocomplete="off">
+<button id="go">Research</button>
+<select id="lib" title="Past queries"><option value="">— past queries —</option></select>
+</div>
+<div id="prog" class="prog">
+<div class="pb"><div id="progbar"></div></div>
+<div class="pm" id="progmsg">Starting…</div>
+</div>
+<div id="meta" class="meta"></div>
 <div id="app"></div>
-<div class="legend">
-<div class="li"><div class="ld" style="background:#1D9E75"></div>Raw materials (6)</div>
-<div class="li"><div class="ld" style="background:#7F77DD"></div>Extraction (24)</div>
-<div class="li"><div class="ld" style="background:#378ADD"></div>CDMO (85)</div>
-<div class="li"><div class="ld" style="background:#BA7517"></div>Branded (27)</div>
-<div class="li"><div class="ld" style="background:#D85A30"></div>Distribution (9)</div>
-<div class="li"><div class="ld" style="background:#D4537E"></div>Regulatory (4)</div>
-</div>
+<div id="legend" class="legend"></div>
+<div class="ft">Runs cache per-query. Re-opening a past industry is instant.</div>
 
 <script src="data.js"></script>
 <script src="app.js"></script>
